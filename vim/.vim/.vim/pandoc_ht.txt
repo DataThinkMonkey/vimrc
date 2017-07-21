@@ -1,0 +1,56 @@
+# How to convert markdown to other doc types.
+
+## HTML
+pandoc -s file -o example.html
+### HTML with smart quotes, TOC, CSS and footer
+pandoc -s -S --toc -c pandoc.css -A footer.html file -o example3.html
+---
+## Beamer Slideshow
+pandoc -t beamer file -o example8.pdf
+### Example code
+Percentage \% is intro slide.
+Pound \# title of new slide
+Dash \- bullets
+> % Eating Habits
+> % John Doe
+> % March 22, 2005
+
+> # In the morning
+
+> - Eat eggs
+> - Drink coffee
+
+> # In the evening
+
+> - Eat spaghetti
+> - Drink wine
+
+> # Conclusion
+>
+> - And the answer is..
+---
+# HTML Slideshow
+
+---
+## PDF
+Latex needs to be installed.
+pandoc file -o example11.pdf
+---
+## OpenOffice/OpenDocument ODT
+pandoc file -o example21.odt
+---
+## EPUB
+pandoc -S file -o README.epub
+---
+## Word docx
+pandoc -s -S file -o example29.docx
+### Docx iwth reference
+pandoc -S --reference-docx twocolumns.docx -o UsersGuide.docx file
+---
+# Other conversions
+## Docx to markdown
+pandoc -s example30.docx -t markdown -o example35.md
+## EPUB to plain text
+pandoc README.epub -t plain -o example36.text
+## html to markdown
+pandoc -s -r html http://www.gnu.org/software/make/ -o example12.text

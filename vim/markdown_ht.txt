@@ -1,0 +1,137 @@
+Markdown Cheatsheet
+-------------------
+
+## Headings
+Headings from `h1` through `h6` are constructed with a `#` for each level:
+
+# h1 Heading
+## h2 Heading
+### h3 Heading
+#### h4 Heading
+##### h5 Heading
+###### h6 Heading
+or 
+Header1 Header2
+======= -------
+---
+## Manual line Breaks
+End a line with two or more spaces.
+---
+## Footnotes
+Creates a superscript, which links to footnote.
+Word[^1]
+[^1]: footnote text.
+Footnote text has link to return to reference.
+---
+## Code Blocks
+Indent every line of code block by at least 4 spaces or 1 tab. End preceding
+paragraph with a colon:
+
+Use this code:
+> code block
+---
+## Backslash for escape characters.
+---
+
+## Emphasis
+
+### Bold
+**rendered as bold text**
+
+### Italics
+_rendered as italicized text_
+
+### strikethrough
+~~Strike through this text.~~
+
+---
+## Lists - indent for embedded
+### Unordered
+A list of items in which the order of the items does not explicitly matter.
+You may use any of the following symbols to denote bullets for each list item:
+* valid bullet
+- valid bullet
++ valid bullet
+
+### Ordered
+A list of items in which the order of items does explicitly matter.
+1. Lorem ipsum dolor sit amet
+2. Consectetur adipiscing elit
+3. Integer molestie lorem at massa
+
+---
+## Tables
+Tables are created by adding pipes as dividers between each cell, and by adding
+a line of dashes (also separated by bars) beneath the header. Note that the
+pipes do not need to be vertically aligned.
+
+| Option | Description |
+| ------ | ----------- |
+| data   | that will be passed into templates. |
+| engine | engine to be used for processing templates. |
+| ext    | extension to be used for dest files. |
+
+### Right aligned text
+Adding a colon on the right side of the dashes below any heading will right
+align text for that column.
+
+| Option | Description |
+| ------:| -----------:|
+| data   | supply the data that will be passed into templates. |
+---
+## Links
+g
+### Basic link
+[word](http://assemble.io)
+
+### Add a title
+[Upstage](https://github.com/upstage/ "Visit Upstage!")
+
+### Named Anchors
+Named anchors enable you to jump to the specified anchor point on the same page.
+For example, each of these chapters:
+# Table of Contents
+  * [Chapter 1](#chapter-1)
+  * [Chapter 2](#chapter-2)
+  * [Chapter 3](#chapter-3)
+
+will jump to these sections:
+## Chapter 1 <a id="chapter-1"></a>
+Content for chapter one.
+
+## Chapter 2 <a id="chapter-2"></a>
+Content for chapter one.
+
+**NOTE** that specific placement of the anchor tag seems to be arbitrary. They
+are placed inline here since it seems to be unobtrusive, and it works.
+---
+## Images
+Images have a similar syntax to links but include a preceding exclamation point.
+![Minion](http://octodex.github.com/images/minion.png)
+
+### Reference Style
+![text][id]
+[id]: /path/to/image/png "title"
+---
+## Horizontal Rules
+* `___`: three consecutive underscores
+* `---`: three consecutive dashes
+* `***`: three consecutive asterisks
+---
+## Blockquotes
+For quoting blocks of content from another source within your document.
+> before any text you want to quote. 
+
+Blockquotes can also be nested:
+> Donec massa lacus, ultricies a ullamcorper in, fermentum sed augue. 
+>> Sed adipiscing elit vitae augue consectetur a gravida nunc vehicula. 
+>>> Donec
+---
+### Indented code
+``` js
+    // Some comments
+    line 1 of code
+    line 2 of code
+    line 3 of code
+```
+

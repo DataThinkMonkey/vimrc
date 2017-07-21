@@ -1,0 +1,120 @@
+" Pathogen - git clone to .vim/bundle dir to install plugin
+filetype off " Pathogen needs to run before plugin indent on
+execute pathogen#infect() 
+"call pathogen#runtime_append_all_bundles()
+call pathogen#helptags() " generate helptags for everything in 'runtimepath'
+filetype plugin indent on
+" ----------------------------
+" PLUGINS
+" map NERDTree plugin to F10 - filesystem tree left
+map <F10> :NERDTreeToggle<CR>
+"vim-geeknote plugin
+func! Gnote()
+  Geeknote
+  let g:GeeknoteFormat="markdown"
+endfu 
+map <F8> :call Gnote() <CR>  
+"noremap <F8> :Geeknote<CR>
+"powerline - cool status bar
+set  rtp+=/home/jared/.vim/bundle/powerline/powerline/bindings/vim/
+set laststatus=2
+set t_Co=256
+"supertab - autocomplete tags using tab
+"autoclose - auto creates closing brackets
+"closetag - ctrl+_ will add html closing tag </whatever>
+"thesaurus plugin, type :Thesaurus <word>  
+"-----------------------------
+"OTHER SETTINGS
+"text wrap 80 characters
+set tw=80
+"line numbering
+set number
+syntax on
+"Set autosave
+set autowriteall
+"-----------------------------
+"function to enable program mode particularly for python
+func! ProgPyMode()
+ set ts=4 " tab to 4 spaces
+ set autoindent " indent when moving to the next line while writing code
+ set expandtab " expand tabs into spaces
+ set shiftwidth=4 " when using the >> or << commands, shift lines by 4 spaces
+ set showmatch " show the matching part of the pair for [] {} and ()
+ let python_highlight_all = 1 " enable all Python syntax highlighting features
+ echo "Programming Python Mode"
+endfu
+map <F3> :call ProgPyMode()<CR>
+"----------------------------
+"Enable mouse using F4 
+function! ToggleMouse()
+if &mouse == 'a'
+set mouse=
+echo "Mouse usage disabled"
+else
+set mouse=a
+echo "Mouse usage enabled"
+endif
+endfunction
+map <F4> :call ToggleMouse()<CR>
+"----------------------------
+"Toggle spelling on and off by using F5.
+function! ToggleSpellCheck()
+        set spell!
+        if &spell
+          echo "Spell Check ON"
+        else
+          echo "Spell Check OFF"
+        endif
+      endfunction
+map <F5> :call ToggleSpellCheck()<CR>
+"----------------------------
+"F6 turns on word processing mode
+"To access Thesaurus in insert mode, ctrl+x,ctrl+t
+"In insert mode, gp on highlighted text turns on par formatting
+"This auto formats wrap in lines and paragraphs. 
+func! WordProcessorMode() 
+  Goyo
+  let g:limelight_conceal_ctermfg = 240
+  Limelight
+  map j gj 
+  map k gk
+  setlocal spell spelllang=en_us 
+   " Display status bar
+    set laststatus=2
+   """""""""""""""""""""
+   " Beginning of auto word count
+   """""""""""""""""""""
+   let g:word_count="<calculating>"
+    function WordCount()
+       return g:word_count
+    endfunction
+   function UpdateWordCount()
+    let lnum = 1
+    let n = 0
+     while lnum <= line('$')
+    let n = n + len(split(getline(lnum)))
+    let lnum = lnum + 1
+     endwhile
+    let g:word_count = n
+   endfunction
+   "" Update the count when cursor is idle in command or insert mode.
+   "" Update when idle for 1000 msec (default is 4000 msec).
+   set updatetime=1000
+   augroup WordCounter
+	au! CursorHold,CursorHoldI * call UpdateWordCount()
+   augroup END
+	"" Set statusline, shown here a piece at a time
+	highlight User1 ctermbg=blue guibg=green ctermfg=white guifg=black
+	set statusline=%1*            " Switch to User1 color highlight
+	set statusline+=%<%f            " file name, cut if needed at start
+	set statusline+=%M            " modified flag
+	set statusline+=%y            " file type
+	set statusline+=%=            " separator from left to right justified
+	set statusline+=\ %{WordCount()}\ words,
+	set statusline+=\ %l/%L\ lines,\ %P    " percentage through the file
+   " end status bar
+  echo "Word Processing Mode"
+endfu 
+map <F6> :call WordProcessorMode()<CR>
+"----------------------------
+
