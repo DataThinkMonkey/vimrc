@@ -25,10 +25,12 @@ set t_Co=256
 "thesaurus plugin, type :Thesaurus <word>  
 "-----------------------------
 "OTHER SETTINGS
-"text wrap 80 characters
-set tw=80
+"Soft text wrap 80 characters with no line break
+"set tw=80
+set wrap
+set linebreak
 "line numbering
-set number
+"set number
 syntax on
 "Set autosave
 set autowriteall
