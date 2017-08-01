@@ -4,29 +4,8 @@ execute pathogen#infect()
 "call pathogen#runtime_append_all_bundles()
 call pathogen#helptags() " generate helptags for everything in 'runtimepath'
 filetype plugin indent on
-" ----------------------------
-" PLUGINS
-" map NERDTree plugin to F10 - filesystem tree left
-map <F10> :NERDTreeToggle<CR>
-"vim-geeknote plugin
-func! Gnote()
-  Geeknote
-  let g:GeeknoteFormat="markdown"
-endfu 
-map <F8> :call Gnote() <CR>  
-"noremap <F8> :Geeknote<CR>
-"powerline - cool status bar
-set  rtp+=/home/jared/.vim/bundle/powerline/powerline/bindings/vim/
-set laststatus=2
-set t_Co=256
-"supertab - autocomplete tags using tab
-"autoclose - auto creates closing brackets
-"closetag - ctrl+_ will add html closing tag </whatever>
-"thesaurus plugin, type :Thesaurus <word>  
 "-----------------------------
-"OTHER SETTINGS
-"Soft text wrap 80 characters with no line break
-"set tw=80
+"SETTINGS
 set wrap
 set linebreak
 "line numbering
@@ -34,7 +13,34 @@ set linebreak
 syntax on
 "Set autosave
 set autowriteall
-"-----------------------------
+" ----------------------------
+" PLUGINS
+" supertab - autocomplete tags using tab
+" autoclose - auto creates closing brackets
+" closetag - ctrl+_ will add html closing tag </whatever>
+" thesaurus plugin, type :Thesaurus <word>  
+" goyo - Used for Word Processing mode, adds margins, blocks and centers text
+" Calendar - you google calendar in vim
+" limelight - highlights current paragraph, softens other paragraphs 
+" powerline - cool status bar
+set  rtp+=/home/jared/.vim/bundle/powerline/powerline/bindings/vim/
+set laststatus=2
+set t_Co=256
+" --------------------------
+function! Help ()
+	!clear && cat ~/.vim/help.txt	
+endfunction
+map <F1> :call Help()<CR>
+" ---------------------------
+" Calendar F2
+function! Cal ()
+let g:calendar_google_calendar = 1
+Calendar -view=week
+Calendar -view=year -split=horizontal -position=below -height=12
+endfunction
+map <F2> :call Cal()<CR>
+
+" --------------------------
 "function to enable program mode particularly for python
 func! ProgPyMode()
  set ts=4 " tab to 4 spaces
@@ -71,15 +77,16 @@ function! ToggleSpellCheck()
 map <F5> :call ToggleSpellCheck()<CR>
 "----------------------------
 "F6 turns on word processing mode
-"To access Thesaurus in insert mode, ctrl+x,ctrl+t
-"In insert mode, gp on highlighted text turns on par formatting
-"This auto formats wrap in lines and paragraphs. 
-func! WordProcessorMode() 
+	"This auto formats wrap in lines and paragraphs. 
+	func! WordProcessorMode() 
   Goyo
   let g:limelight_conceal_ctermfg = 240
   Limelight
   map j gj 
   map k gk
+  set tw=80
+  set wrap
+  set linebreak
   setlocal spell spelllang=en_us 
    " Display status bar
     set laststatus=2
@@ -119,4 +126,14 @@ func! WordProcessorMode()
 endfu 
 map <F6> :call WordProcessorMode()<CR>
 "----------------------------
+"vim-geeknote plugin mapped to F8
+func! Gnote()
+  Geeknote
+  let g:GeeknoteFormat="markdown"
+endfu 
+map <F8> :call Gnote() <CR>  
+"noremap <F8> :Geeknote<CR>
+"-----------------------------
+" map NERDTree plugin to F10 - filesystem tree left
+map <F10> :NERDTreeToggle<CR>
 

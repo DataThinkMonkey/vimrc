@@ -2,14 +2,27 @@
 My .vim directory and .vimrc file. 
 It is configured with following plug-ins with key map. 
 
-NERDtree - F10
+Plugins include:
+Powerline - Cool toolbar
+supertab - Tab to autocomplete selection
+autoclose - Auto fill closing brackets and quotes
+closetag - Auto close html tags
+Thesaurus
 
-vim-geeknote - F8
-* similar to NERDtree, but for your Evernote Notes.
-* Requires Geeknote to be installed.
-* Edit and manage evernote in vim.
+Settings
+* Text Wrap at 80 character
+* syntax highlighting
+* Autosave
 
-Python Programming Mode
+Using Pathogen plugin manager
+
+Other plugins/Features:
+
+F1 - Help with all function keys and plugins, see vim/help.txt
+
+F2 - Calendar, can be connected to google calendar and tasks read-only
+
+F3 - Python Programming Mode 
 * tab 4 spaces
 * autoindent
 * expand tabs into spaces
@@ -17,29 +30,23 @@ Python Programming Mode
 * showmatch
 * syntax highlighting
 
-Mouse enable(I know) - F4
+F4 - Mouse enable(I know)
 * I use vim for word processing.
+*
+F5 - Spell Check
 
-Enable Spelling - F5
-Word Processor Mode - F6
+F6 - Word Processor Mode 
+* Word wrap at 80
 * limelight plugin
 * goyo plugin
 * Custom bar for word count
 
-Other Plugins include:
-Powerline 
-supertab
-autoclose
-closetag
-thesaurus
+F8 - Toggle Geeknote
+* similar to NERDtree, but for your Evernote Notes.
+* Requires Geeknote to be installed.
+* Edit and manage evernote in vim.
 
-Settings
-* Text Wrap at 80 chara
-* Line numbering
-* syntax highlighting
-* Autosave
-
-Using Pathogen plugin manager
+F10 - NERDtree 
 
 To-do
 * Auto custom headers based off of extension
