@@ -13,11 +13,13 @@ set linebreak
 syntax on
 "Set autosave
 set autowriteall
+set backspace=indent,eol,start " have backspace key work like other programs
 " ----------------------------
 " PLUGINS
 " supertab - autocomplete tags using tab
 " autoclose - auto creates closing brackets
 " closetag - ctrl+_ will add html closing tag </whatever>
+" thesaurus plugin, type :Thesaurus <word>  
 " goyo - Used for Word Processing mode, adds margins, blocks and centers text
 " Calendar - you google calendar in vim
 " limelight - highlights current paragraph, softens other paragraphs 
@@ -52,9 +54,32 @@ func! ProgPyMode()
 endfu
 map <F3> :call ProgPyMode()<CR>
 "----------------------------
-" F6 turns on word processing mode
-" This auto formats wrap in lines and paragraphs. 
-func! WordProcessorMode() 
+"Enable mouse using F4 
+function! ToggleMouse()
+if &mouse == 'a'
+set mouse=
+echo "Mouse usage disabled"
+else
+set mouse=a
+echo "Mouse usage enabled"
+endif
+endfunction
+map <F4> :call ToggleMouse()<CR>
+"----------------------------
+"Toggle spelling on and off by using F5.
+function! ToggleSpellCheck()
+        set spell!
+        if &spell
+          echo "Spell Check ON"
+        else
+          echo "Spell Check OFF"
+        endif
+      endfunction
+map <F5> :call ToggleSpellCheck()<CR>
+"----------------------------
+"F6 turns on word processing mode
+	"This auto formats wrap in lines and paragraphs. 
+	func! WordProcessorMode() 
   Goyo
   let g:limelight_conceal_ctermfg = 240
   Limelight
@@ -63,7 +88,6 @@ func! WordProcessorMode()
   set tw=80
   set wrap
   set linebreak
-  set mouse=a
   setlocal spell spelllang=en_us 
    " Display status bar
     set laststatus=2
@@ -107,51 +131,10 @@ map <F6> :call WordProcessorMode()<CR>
 func! Gnote()
   Geeknote
   let g:GeeknoteFormat="markdown"
-  set mouse=a
-  setlocal spell spelllang=en_us 
 endfu 
 map <F8> :call Gnote() <CR>  
 "noremap <F8> :Geeknote<CR>
 "-----------------------------
 " map NERDTree plugin to F10 - filesystem tree left
 map <F10> :NERDTreeToggle<CR>
-"----------------------------
-" Quickmenu Help F12
-" enable cursorline (L) and cmdline help (H)
-let g:quickmenu_options = "HL"
-
-" clear all the items
-call g:quickmenu#reset()
-
-" choose a favorite key to show/hide quickmenu
-noremap <silent><F12> :call quickmenu#toggle(0)<cr>
-
-"text will be show in the quickmenu, vimscript in %{...} will be evaluated and expanded.
-"action is a piece of vimscript to be executed when a item is selected.
-"help will display in the cmdline if g:quickmenu_options contains H.
-" function quickmenu#append(text, action [, help = ''])
-
-" section 1, text starting with "#" represents a section (see the screen capture below)
-call g:quickmenu#header('QuickMenu')
-call g:quickmenu#append('# Help - Plugins', '')
-
-call g:quickmenu#append('F2 - Calendar', 'call Cal ()', 'Selected Google Calendar')
-call g:quickmenu#append('F3 - Python Mode', 'call ProgPyMode()', 'Selected Python Mode')
-call g:quickmenu#append('F6 - Word Processor', 'call WordProcessorMode()', 'Word Processor Mode')
-call g:quickmenu#append('F8 - Geeknote', 'call Gnote()', 'Geeknote Menu')
-call g:quickmenu#append('F10 - NerdTree', 'NERDTreeToggle', 'NerdTree')
-
-call g:quickmenu#append('# Pandoc', '')
-call g:quickmenu#append('# Import Templates', '')
-call g:quickmenu#append('# Git', '')
-
-" To-do
-" git
-" pandoc convert
-" thesaurus
-" template list
-" " Chapter Reviews
-" " Lab
-" " scripts, etc
-" can add to another menu call quickmenu#current(1)
 
