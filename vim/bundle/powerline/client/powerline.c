@@ -42,16 +42,36 @@ void do_write(int sd, const char *raw, size_t len) {
 	}
 }
 
-#ifdef __APPLE__
-# define ADDRESS_TEMPLATE "/tmp/powerline-ipc-%d"
-# define A
+static inline size_t true_sun_len(const struct sockaddr_un *ptr) {
+#ifdef __linux__
+	/* Because SUN_LEN uses strlen and abstract namespace paths begin
+	 * with a null byte, SUN_LEN is broken for these. Passing the full
+	 * struct size also fails on Linux, so compute manually. The
+	 * abstract namespace is Linux-only. */
+	if (ptr->sun_path[0] == '\0') {
+		return sizeof(ptr->sun_family) + strlen(ptr->sun_path + 1) + 1;
+	}
+#endif
+#ifdef SUN_LEN
+	/* If the vendor provided SUN_LEN, we may as well use it. */
+	return SUN_LEN(ptr);
 #else
+	/* SUN_LEN is not POSIX, so if it was not provided, use the struct
+	 * size as a fallback. */
+	return sizeof(struct sockaddr_un);
+#endif
+}
+
+#ifdef __linux__
 # define ADDRESS_TEMPLATE "powerline-ipc-%d"
 # define A +1
+#else
+# define ADDRESS_TEMPLATE "/tmp/powerline-ipc-%d"
+# define A
 #endif
 
 #define ADDRESS_SIZE sizeof(ADDRESS_TEMPLATE) + (sizeof(uid_t) * 4)
-#define NUM_ARGS_SIZE (sizeof(int) * 2)
+#define NUM_ARGS_SIZE (sizeof(int) * 2 + 1)
 #define BUF_SIZE 4096
 #define NEW_ARGV_SIZE 200
 
@@ -68,6 +88,7 @@ int main(int argc, char *argv[]) {
 	char *wd = NULL;
 	char **envp;
 	const char *address;
+	int len;
 
 	if (argc < 2) {
 		printf("Must provide at least one argument.\n");
@@ -91,7 +112,7 @@ int main(int argc, char *argv[]) {
 	server.sun_family = AF_UNIX;
 	strncpy(server.sun_path A, address, strlen(address));
 
-	if (connect(sd, (struct sockaddr *) &server, (socklen_t) (sizeof(server.sun_family) + strlen(address) A)) < 0) {
+	if (connect(sd, (struct sockaddr *) &server, true_sun_len(&server)) < 0) {
 		close(sd);
 		/* We failed to connect to the daemon, execute powerline instead */
 		argc = (argc < NEW_ARGV_SIZE - 1) ? argc : NEW_ARGV_SIZE - 1;
@@ -102,8 +123,8 @@ int main(int argc, char *argv[]) {
 		execvp("powerline-render", newargv);
 	}
 
-	snprintf(num_args, NUM_ARGS_SIZE, "%x", argc - 1);
-	do_write(sd, num_args, strlen(num_args));
+	len = snprintf(num_args, NUM_ARGS_SIZE, "%x", argc - 1);
+	do_write(sd, num_args, len);
 	do_write(sd, eof, 1);
 
 	for (i = 1; i < argc; i++) {

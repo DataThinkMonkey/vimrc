@@ -13,7 +13,7 @@ except ImportError:
 	from powerline.shell import ShellPowerline
 
 from powerline.commands.main import get_argparser, finish_args, write_output
-from powerline.lib.unicode import get_preferred_output_encoding
+from powerline.lib.encoding import get_unicode_writer
 
 
 if sys.version_info < (3,):
@@ -23,8 +23,9 @@ else:
 
 
 if __name__ == '__main__':
-	args = get_argparser().parse_args()
-	finish_args(args)
+	parser = get_argparser()
+	args = parser.parse_args()
+	finish_args(parser, os.environ, args)
 	powerline = ShellPowerline(args, run_once=True)
 	segment_info = {'args': args, 'environ': os.environ}
-	write_output(args, powerline, segment_info, write, get_preferred_output_encoding())
+	write_output(args, powerline, segment_info, get_unicode_writer())

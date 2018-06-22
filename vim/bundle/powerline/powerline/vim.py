@@ -3,23 +3,53 @@ from __future__ import (unicode_literals, division, absolute_import, print_funct
 
 import sys
 import json
+import logging
 
 from itertools import count
 
-import vim
+try:
+	import vim
+except ImportError:
+	vim = object()
 
-from powerline.bindings.vim import vim_get_func, vim_getvar
-from powerline import Powerline, FailedUnicode
-from powerline.lib import mergedicts
+from powerline.bindings.vim import vim_get_func, vim_getvar, get_vim_encoding, python_to_vim
+from powerline import Powerline, FailedUnicode, finish_common_config
+from powerline.lib.dict import mergedicts
+from powerline.lib.unicode import u
 
 
-def _override_from(config, override_varname):
+def _override_from(config, override_varname, key=None):
 	try:
 		overrides = vim_getvar(override_varname)
 	except KeyError:
 		return config
+	if key is not None:
+		try:
+			overrides = overrides[key]
+		except KeyError:
+			return config
 	mergedicts(config, overrides)
 	return config
+
+
+class VimVarHandler(logging.Handler, object):
+	'''Vim-specific handler which emits messages to Vim global variables
+
+	:param str varname:
+		Variable where
+	'''
+	def __init__(self, varname):
+		super(VimVarHandler, self).__init__()
+		utf_varname = u(varname)
+		self.vim_varname = utf_varname.encode('ascii')
+		vim.command('unlet! g:' + utf_varname)
+		vim.command('let g:' + utf_varname + ' = []')
+
+	def emit(self, record):
+		message = u(record.message)
+		if record.exc_text:
+			message += '\n' + u(record.exc_text)
+		vim.eval(b'add(g:' + self.vim_varname + b', ' + python_to_vim(message) + b')')
 
 
 class VimPowerline(Powerline):
@@ -27,7 +57,37 @@ class VimPowerline(Powerline):
 		super(VimPowerline, self).init('vim', **kwargs)
 		self.last_window_id = 1
 		self.pyeval = pyeval
-		self.window_statusline = '%!' + pyeval + '(\'powerline.statusline({0})\')'
+		self.construct_window_statusline = self.create_window_statusline_constructor()
+		if all((hasattr(vim.current.window, attr) for attr in ('options', 'vars', 'number'))):
+			self.win_idx = self.new_win_idx
+		else:
+			self.win_idx = self.old_win_idx
+			self._vim_getwinvar = vim_get_func('getwinvar', 'bytes')
+			self._vim_setwinvar = vim_get_func('setwinvar')
+
+	if sys.version_info < (3,):
+		def create_window_statusline_constructor(self):
+			window_statusline = b'%!' + str(self.pyeval) + b'(\'powerline.statusline({0})\')'
+			return window_statusline.format
+	else:
+		def create_window_statusline_constructor(self):
+			startstr = b'%!' + self.pyeval.encode('ascii') + b'(\'powerline.statusline('
+			endstr = b')\')'
+			return lambda idx: (
+				startstr + str(idx).encode('ascii') + endstr
+			)
+
+	create_window_statusline_constructor.__doc__ = (
+		'''Create function which returns &l:stl value being given window index
+
+		Created function must return :py:class:`bytes` instance because this is 
+		what ``window.options['statusline']`` returns (``window`` is 
+		:py:class:`vim.Window` instance).
+
+		:return:
+			Function with type ``int → bytes``.
+		'''
+	)
 
 	default_log_stream = sys.stdout
 
@@ -73,20 +133,25 @@ class VimPowerline(Powerline):
 			self.setup_kwargs.setdefault('_local_themes', []).append((key, config))
 			return True
 
-	@staticmethod
-	def get_encoding():
-		return vim.eval('&encoding')
+	get_encoding = staticmethod(get_vim_encoding)
 
 	def load_main_config(self):
-		return _override_from(super(VimPowerline, self).load_main_config(), 'powerline_config_overrides')
+		main_config = _override_from(super(VimPowerline, self).load_main_config(), 'powerline_config_overrides')
+		try:
+			use_var_handler = bool(int(vim_getvar('powerline_use_var_handler')))
+		except KeyError:
+			use_var_handler = False
+		if use_var_handler:
+			main_config.setdefault('common', {})
+			main_config['common'] = finish_common_config(self.get_encoding(), main_config['common'])
+			main_config['common']['log_file'].append(['powerline.vim.VimVarHandler', [['powerline_log_messages']]])
+		return main_config
 
 	def load_theme_config(self, name):
-		# Note: themes with non-[a-zA-Z0-9_] names are impossible to override 
-		# (though as far as I know exists() won’t throw). Won’t fix, use proper 
-		# theme names.
 		return _override_from(
 			super(VimPowerline, self).load_theme_config(name),
-			'powerline_theme_overrides__' + name
+			'powerline_theme_overrides',
+			name
 		)
 
 	def get_local_themes(self, local_themes):
@@ -141,7 +206,7 @@ class VimPowerline(Powerline):
 			pyeval = 'PowerlinePyeval'
 
 		self.pyeval = pyeval
-		self.window_statusline = '%!' + pyeval + '(\'powerline.statusline({0})\')'
+		self.construct_window_statusline = self.create_window_statusline_constructor()
 
 		self.update_renderer()
 		__main__.powerline = self
@@ -184,10 +249,6 @@ class VimPowerline(Powerline):
 		for args in _local_themes:
 			self.add_local_theme(*args)
 
-	@staticmethod
-	def get_segment_info():
-		return {}
-
 	def reset_highlight(self):
 		try:
 			self.renderer.reset_highlight()
@@ -199,44 +260,40 @@ class VimPowerline(Powerline):
 			# do anything.
 			pass
 
-	if all((hasattr(vim.current.window, attr) for attr in ('options', 'vars', 'number'))):
-		def win_idx(self, window_id):
-			r = None
-			for window in vim.windows:
-				try:
-					curwindow_id = window.vars['powerline_window_id']
-					if r is not None and curwindow_id == window_id:
-						raise KeyError
-				except KeyError:
-					curwindow_id = self.last_window_id
-					self.last_window_id += 1
-					window.vars['powerline_window_id'] = curwindow_id
-				statusline = self.window_statusline.format(curwindow_id)
-				if window.options['statusline'] != statusline:
-					window.options['statusline'] = statusline
-				if curwindow_id == window_id if window_id else window is vim.current.window:
-					r = (window, curwindow_id, window.number)
-			return r
-	else:
-		_vim_getwinvar = staticmethod(vim_get_func('getwinvar'))
-		_vim_setwinvar = staticmethod(vim_get_func('setwinvar'))
+	def new_win_idx(self, window_id):
+		r = None
+		for window in vim.windows:
+			try:
+				curwindow_id = window.vars['powerline_window_id']
+				if r is not None and curwindow_id == window_id:
+					raise KeyError
+			except KeyError:
+				curwindow_id = self.last_window_id
+				self.last_window_id += 1
+				window.vars['powerline_window_id'] = curwindow_id
+			statusline = self.construct_window_statusline(curwindow_id)
+			if window.options['statusline'] != statusline:
+				window.options['statusline'] = statusline
+			if curwindow_id == window_id if window_id else window is vim.current.window:
+				r = (window, curwindow_id, window.number)
+		return r
 
-		def win_idx(self, window_id):
-			r = None
-			for winnr, window in zip(count(1), vim.windows):
-				curwindow_id = self._vim_getwinvar(winnr, 'powerline_window_id')
-				if curwindow_id and not (r is not None and curwindow_id == window_id):
-					curwindow_id = int(curwindow_id)
-				else:
-					curwindow_id = self.last_window_id
-					self.last_window_id += 1
-					self._vim_setwinvar(winnr, 'powerline_window_id', curwindow_id)
-				statusline = self.window_statusline.format(curwindow_id)
-				if self._vim_getwinvar(winnr, '&statusline') != statusline:
-					self._vim_setwinvar(winnr, '&statusline', statusline)
-				if curwindow_id == window_id if window_id else window is vim.current.window:
-					r = (window, curwindow_id, winnr)
-			return r
+	def old_win_idx(self, window_id):
+		r = None
+		for winnr, window in zip(count(1), vim.windows):
+			curwindow_id = self._vim_getwinvar(winnr, 'powerline_window_id')
+			if curwindow_id and not (r is not None and curwindow_id == window_id):
+				curwindow_id = int(curwindow_id)
+			else:
+				curwindow_id = self.last_window_id
+				self.last_window_id += 1
+				self._vim_setwinvar(winnr, 'powerline_window_id', curwindow_id)
+			statusline = self.construct_window_statusline(curwindow_id)
+			if self._vim_getwinvar(winnr, '&statusline') != statusline:
+				self._vim_setwinvar(winnr, '&statusline', statusline)
+			if curwindow_id == window_id if window_id else window is vim.current.window:
+				r = (window, curwindow_id, winnr)
+		return r
 
 	def statusline(self, window_id):
 		window, window_id, winnr = self.win_idx(window_id) or (None, None, None)

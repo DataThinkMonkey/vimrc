@@ -48,33 +48,67 @@ def parse_version(s):
 		return tuple(map(int, s.split('.')))
 
 
+def setup_py_filter(filter_func):
+	with codecs.open('.setup.py.new', 'w', encoding='utf-8') as NS:
+		with codecs.open('setup.py', 'r', encoding='utf-8') as OS:
+			for line in OS:
+				line = filter_func(line)
+				NS.write(line)
+
+	os.unlink('setup.py')
+	os.rename('.setup.py.new', 'setup.py')
+
+
+def setup_py_develop_filter(line, version_string):
+	if line.startswith('\tbase_version = '):
+		line = '\tbase_version = \'' + version_string + '\'\n'
+	return line
+
+
+def setup_py_master_filter(line, version_string):
+	if line.startswith('\tversion='):
+		line = '\tversion=\'' + version_string + '\',\n'
+	elif 'Development Status' in line:
+		line = '\t\t\'Development Status :: 5 - Production/Stable\',\n'
+	return line
+
+
 def merge(version_string, rev, **kwargs):
+	check_call(['git', 'checkout', rev])
+
+	temp_branch_name = 'release-' + version_string
+	check_call(['git', 'checkout', '-b', temp_branch_name])
+	setup_py_filter(lambda line: setup_py_develop_filter(line, version_string))
+	check_call(['git', 'add', 'setup.py'])
+	check_call(['git', 'commit', '-m', 'Update base version'])
+	check_call(['git', 'checkout', rev])
+	check_call(['git', 'merge', '--no-ff',
+	                            '--strategy', 'recursive',
+	                            '--strategy-option', 'theirs',
+	                            '--commit',
+	                            '-m', 'Merge branch \'{0}\' into {1}'.format(temp_branch_name, rev),
+	                            temp_branch_name])
+	check_call(['git', 'branch', '-d', temp_branch_name])
+
+	rev = check_output(['git', 'rev-parse', 'HEAD']).strip()
+
 	check_call(['git', 'checkout', 'master'])
 	try:
 		check_call(['git', 'merge', '--no-ff', '--no-commit', '--log', rev])
 	except CalledProcessError:
 		check_call(['git', 'mergetool', '--tool', 'vimdiff2'])
 
-	with codecs.open('.setup.py.new', 'w', encoding='utf-8') as NS:
-		with codecs.open('setup.py', 'r', encoding='utf-8') as OS:
-			for line in OS:
-				if line.startswith('\tversion='):
-					line = '\tversion=\'' + version_string + '\',\n'
-				elif 'Development Status' in line:
-					line = '\t\t\'Development Status :: 5 - Production/Stable\',\n'
-				NS.write(line)
-
-	os.unlink('setup.py')
-	os.rename('.setup.py.new', 'setup.py')
+	setup_py_filter(lambda line: setup_py_master_filter(line, version_string))
 	check_call(['git', 'add', 'setup.py'])
 
 	check_call(['git', 'commit'])
 	check_call(['git', 'tag', '-m', 'Release ' + version_string, '-a', version_string])
 
 
-def push(version_string, **kwargs):
+def push(version_string, rev, **kwargs):
 	check_call(['git', 'push', 'upstream', 'master'])
 	check_call(['git', 'push', 'upstream', version_string])
+	check_call(['git', 'push', 'upstream', rev])
 
 
 def upload(**args):
@@ -113,38 +147,42 @@ def create_ebuilds(version_string, overlay, user, **kwargs):
 		live_ebuild = None
 		for ebuild in os.listdir(pdir):
 			if ebuild.endswith('.ebuild') and '9999' in ebuild:
+				live_ebuild_base = ebuild
 				live_ebuild = os.path.join(pdir, ebuild)
 				break
 		assert(live_ebuild)
 		vcur = os.path.join(pdir, '{0}-{1}.ebuild'.format(pn, version_string))
-		with open(live_ebuild) as LEF:
-			with open(vcur, 'w') as F:
-				dropnext = False
-				for line in LEF:
-					if line.startswith('EGIT'):
-						# Drop all EGIT_… and the next empty line
-						dropnext = True
-						next_re = re.compile('^$')
-						continue
-					if dropnext:
-						assert(next_re.match(line))
-						dropnext = False
-						continue
-					if line.startswith('# Note the lack of an assignment to ${S}'):
-						next_re = re.compile('^#')
-						dropnext = True
-						line = 'S="${WORKDIR}/${MY_P}"\n'
-					if line.startswith('inherit'):
-						line = line.replace(' git-r3', '')
-						line += '\n'
-						line += 'MY_PN="powerline-status"\n'
-						line += 'MY_P="${MY_PN}-${PV}"'
-						line += '\n'
-					elif line.startswith('HOMEPAGE'):
-						line += 'SRC_URI="mirror://pypi/p/${MY_PN}/${MY_P}.tar.gz"\n'
-					elif line.startswith('KEYWORDS'):
-						line = 'KEYWORDS="~amd64 ~ppc ~x86 ~x86-fbsd"\n'
-					F.write(line)
+		if pn == 'powerline-vim':
+			with open(live_ebuild) as LEF:
+				with open(vcur, 'w') as F:
+					dropnext = False
+					for line in LEF:
+						if line.startswith('EGIT'):
+							# Drop all EGIT_… and the next empty line
+							dropnext = True
+							next_re = re.compile('^$')
+							continue
+						if dropnext:
+							assert(next_re.match(line))
+							dropnext = False
+							continue
+						if line.startswith('# Note the lack of an assignment to ${S}'):
+							next_re = re.compile('^#')
+							dropnext = True
+							line = 'S="${WORKDIR}/${MY_P}"\n'
+						if line.startswith('inherit'):
+							line = line.replace(' git-r3', '')
+							line += '\n'
+							line += 'MY_PN="powerline-status"\n'
+							line += 'MY_P="${MY_PN}-${PV}"'
+							line += '\n'
+						elif line.startswith('HOMEPAGE'):
+							line += 'SRC_URI="mirror://pypi/p/${MY_PN}/${MY_P}.tar.gz"\n'
+						elif line.startswith('KEYWORDS'):
+							line = 'KEYWORDS="~amd64 ~ppc ~x86 ~x86-fbsd"\n'
+						F.write(line)
+		else:
+			os.symlink(live_ebuild_base, vcur)
 		new_files.append(vcur)
 		check_call(['ebuild', vcur, 'manifest'])
 		new_files.append(os.path.join(pdir, 'Manifest'))

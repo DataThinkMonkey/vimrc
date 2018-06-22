@@ -2,8 +2,17 @@
 from __future__ import (unicode_literals, division, absolute_import, print_function)
 
 from powerline import Powerline
-from powerline.lib import mergedicts
+from powerline.lib.dict import mergedicts
 from powerline.lib.unicode import string
+
+
+class IPythonInfo(object):
+	def __init__(self, shell):
+		self._shell = shell
+
+	@property
+	def prompt_count(self):
+		return self._shell.execution_count
 
 
 # HACK: ipython tries to only leave us with plain ASCII
@@ -32,8 +41,8 @@ class IPythonPowerline(Powerline):
 		)
 
 	def get_config_paths(self):
-		if self.paths:
-			return self.paths
+		if self.config_paths:
+			return self.config_paths
 		else:
 			return super(IPythonPowerline, self).get_config_paths()
 
