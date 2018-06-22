@@ -6,7 +6,9 @@ import os
 import sys
 import subprocess
 import logging
+import shlex
 
+from traceback import print_exc
 from setuptools import setup, find_packages
 
 
@@ -27,7 +29,10 @@ def compile_client():
 	else:
 		from distutils.ccompiler import new_compiler
 		compiler = new_compiler().compiler
-		subprocess.check_call(compiler + ['-O3', 'client/powerline.c', '-o', 'scripts/powerline'])
+		cflags = os.environ.get('CFLAGS', str('-O3'))
+		# A normal split would do a split on each space which might be incorrect. The
+		# shlex will not split if a space occurs in an arguments value.
+		subprocess.check_call(compiler + shlex.split(cflags) + ['client/powerline.c', '-o', 'scripts/powerline'])
 
 try:
 	compile_client()
@@ -54,10 +59,13 @@ else:
 
 
 def get_version():
+	base_version = '2.6'
+	base_version += '.dev9999'
 	try:
-		return 'dev-' + subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip()
-	except Exception as e:
-		return 'dev'
+		return base_version + '+git.' + str(subprocess.check_output(['git', 'rev-parse', 'HEAD']).strip())
+	except Exception:
+		print_exc()
+		return base_version
 
 
 setup(
@@ -82,10 +90,10 @@ setup(
 		'Programming Language :: Python :: Implementation :: CPython',
 		'Programming Language :: Python :: Implementation :: PyPy',
 	],
-	download_url='https://github.com/Lokaltog/powerline/archive/develop.zip',
+	download_url='https://github.com/powerline/powerline/archive/develop.zip',
 	author='Kim Silkebaekken',
 	author_email='kim.silkebaekken+vim@gmail.com',
-	url='https://github.com/Lokaltog/powerline',
+	url='https://github.com/powerline/powerline',
 	license='MIT',
 	# XXX Python 3 doesn’t allow compiled C files to be included in the scripts 
 	# list below. This is because Python 3 distutils tries to decode the file to 
@@ -116,7 +124,7 @@ setup(
 	packages=find_packages(exclude=('tests', 'tests.*')),
 	include_package_data=True,
 	zip_safe=False,
-	install_requires=[],
+	install_requires=['argparse'] if OLD_PYTHON else [],
 	extras_require={
 		'docs': [
 			'Sphinx',

@@ -1,0 +1,30 @@
+Vim Help Cheatsheet
+-------------------
+F1 - This help document.
+F2 - Calendar
+	shift + < or > - Scroll views
+	:Calendar YYYY M D - Switch Cal to that day
+	:Calendar -view=year -split=horizontal -position=below width=27 - example
+	E - Event list
+	? - help 
+	q - Quit
+F3 - Python Programming Mode
+F4 - Toggle mouse
+F5 - Toggle spell check
+F6 - Word Processing Mode
+F8 - Toggle Geeknote
+	:GeeknoteCreateNote <name>
+	:GeeknoteSaveAsNote - save current file in EverNote
+	:GeeknoteSearch <text>
+	:GeeknoteSync - Open notes are NOT synced
+F10 - Toggle Nerdtree
+---------------------
+Other Plugins
+" thesaurus plugin, type :Thesaurus <word>  
+" supertab - autocomplete tags using tab
+" autoclose - auto creates closing brackets
+" closetag - ctrl+_ will add html closing tag </whatever>
+" goyo - Used for Word Processing mode, adds margins, blocks and centers text
+" limelight - highlights current paragraph, softens other paragraphs 
+" powerline - cool status bar
+
