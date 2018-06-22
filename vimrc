@@ -14,6 +14,8 @@ syntax on
 "Set autosave
 set autowriteall
 set backspace=indent,eol,start " have backspace key work like other programs
+"Use ctrl+c and then enter to run your current script. Must be executable.
+map <C-C> :!clear && ./%  
 " ----------------------------
 " PLUGINS
 " supertab - autocomplete tags using tab
@@ -54,17 +56,12 @@ func! ProgPyMode()
 endfu
 map <F3> :call ProgPyMode()<CR>
 "----------------------------
-"Enable mouse using F4 
-function! ToggleMouse()
-if &mouse == 'a'
-set mouse=
-echo "Mouse usage disabled"
-else
-set mouse=a
-echo "Mouse usage enabled"
-endif
+"Open Terminal using F4 
+function! Terminal()
+vert term 
+echo "Terminal Opened."
 endfunction
-map <F4> :call ToggleMouse()<CR>
+map <F4> :call Terminal()<CR>
 "----------------------------
 "Toggle spelling on and off by using F5.
 function! ToggleSpellCheck()
@@ -127,6 +124,17 @@ map <F5> :call ToggleSpellCheck()<CR>
 endfu 
 map <F6> :call WordProcessorMode()<CR>
 "----------------------------
+"Toggle spelling on and off by using F5.
+function! ToggleNum()
+        set number!
+        if &number
+          echo "Line Numbers ON"
+        else
+          echo "Line Numbers OFF"
+        endif
+      endfunction
+map <F7> :call ToggleNum()<CR>
+"-----------------------------
 "vim-geeknote plugin mapped to F8
 func! Gnote()
   Geeknote
